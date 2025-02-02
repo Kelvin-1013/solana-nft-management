@@ -45,17 +45,13 @@ pub mod token {
     }
 
     pub fn mint_nft(ctx: Context<MintNft>) -> Result<()> {
-        let mint = &ctx.accounts.mint;
-        let token = &ctx.accounts.token;
-        let owner = &ctx.accounts.owner;
-        
         anchor_spl::token::mint_to(
             CpiContext::new(
                 ctx.accounts.token_program.to_account_info(),
                 anchor_spl::token::MintTo {
-                    mint: mint.to_account_info(),
-                    to: token.to_account_info(),
-                    authority: owner.to_account_info(),
+                    mint: ctx.accounts.mint.to_account_info(),
+                    to: ctx.accounts.token.to_account_info(),
+                    authority: ctx.accounts.owner.to_account_info(),
                 },
             ),
             1,
@@ -65,17 +61,13 @@ pub mod token {
     }
 
     pub fn transfer_nft(ctx: Context<TransferNft>) -> Result<()> {
-        let from = &ctx.accounts.from;
-        let to = &ctx.accounts.to;
-        let owner = &ctx.accounts.owner;
-        
         anchor_spl::token::transfer(
             CpiContext::new(
                 ctx.accounts.token_program.to_account_info(),
                 anchor_spl::token::Transfer {
-                    from: from.to_account_info(),
-                    to: to.to_account_info(),
-                    authority: owner.to_account_info(),
+                    from: ctx.accounts.from.to_account_info(),
+                    to: ctx.accounts.to.to_account_info(),
+                    authority: ctx.accounts.owner.to_account_info(),
                 },
             ),
             1,
@@ -122,8 +114,7 @@ pub struct InitializeNft<'info> {
     #[account(
         init,
         payer = payer,
-        mint::decimals = 0,
-        mint::authority = payer,
+        space = 8 + 82,  // Discriminator + min space for Mint
     )]
     pub mint: Account<'info, Mint>,
     #[account(
@@ -143,9 +134,9 @@ pub struct InitializeNft<'info> {
 #[derive(Accounts)]
 pub struct MintNft<'info> {
     #[account(mut)]
-    pub mint: Account<'info, Mint>,
+    pub mint: InterfaceAccount<'info, Mint>,
     #[account(mut)]
-    pub token: Account<'info, TokenAccount>,
+    pub token: InterfaceAccount<'info, TokenAccount>,
     #[account(mut)]
     pub owner: Signer<'info>,
     pub token_program: Program<'info, Token>,
@@ -154,9 +145,9 @@ pub struct MintNft<'info> {
 #[derive(Accounts)]
 pub struct TransferNft<'info> {
     #[account(mut)]
-    pub from: Account<'info, TokenAccount>,
+    pub from: InterfaceAccount<'info, TokenAccount>,
     #[account(mut)]
-    pub to: Account<'info, TokenAccount>,
+    pub to: InterfaceAccount<'info, TokenAccount>,
     #[account(mut)]
     pub owner: Signer<'info>,
     pub token_program: Program<'info, Token>,
@@ -164,8 +155,7 @@ pub struct TransferNft<'info> {
 
 #[derive(Accounts)]
 pub struct UpdateNft<'info> {
-    #[account(mut)]
-    pub mint: Account<'info, Mint>,
+    pub mint: InterfaceAccount<'info, Mint>,
     #[account(
         mut,
         seeds = [b"metadata", mint.key().as_ref()],
