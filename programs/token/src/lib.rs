@@ -1,7 +1,7 @@
 use anchor_lang::prelude::*;
 use anchor_spl::{
     associated_token::AssociatedToken,
-    token::{Mint, Token, TokenAccount},
+    token_interface::{Mint, Token, TokenAccount, TokenInterface},
 };
 
 declare_id!("42TNfJ8hVwfaL4VrT5mJBRAt1sWhMwmd4HuFuovqdtLk");
@@ -125,7 +125,7 @@ pub struct InitializeNft<'info> {
         bump
     )]
     pub nft_metadata: Account<'info, NFTMetadata>,
-    pub token_program: Program<'info, Token>,
+    pub token_program: Program<'info, TokenInterface>,
     pub associated_token_program: Program<'info, AssociatedToken>,
     pub rent: Sysvar<'info, Rent>,
     pub system_program: Program<'info, System>,
@@ -139,7 +139,7 @@ pub struct MintNft<'info> {
     pub token: InterfaceAccount<'info, TokenAccount>,
     #[account(mut)]
     pub owner: Signer<'info>,
-    pub token_program: Program<'info, Token>,
+    pub token_program: Program<'info, TokenInterface>,
 }
 
 #[derive(Accounts)]
@@ -150,7 +150,7 @@ pub struct TransferNft<'info> {
     pub to: InterfaceAccount<'info, TokenAccount>,
     #[account(mut)]
     pub owner: Signer<'info>,
-    pub token_program: Program<'info, Token>,
+    pub token_program: Program<'info, TokenInterface>,
 }
 
 #[derive(Accounts)]
@@ -163,7 +163,7 @@ pub struct UpdateNft<'info> {
     )]
     pub nft_metadata: Account<'info, NFTMetadata>,
     pub authority: Signer<'info>,
-    pub token_program: Program<'info, Token>,
+    pub token_program: Program<'info, TokenInterface>,
 }
 
 #[account]
