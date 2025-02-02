@@ -3,7 +3,6 @@ use anchor_spl::{
     associated_token::AssociatedToken,
     token::{Mint, Token, TokenAccount},
 };
-use mpl_token_metadata::state::DataV2;
 
 declare_id!("42TNfJ8hVwfaL4VrT5mJBRAt1sWhMwmd4HuFuovqdtLk");
 
@@ -17,15 +16,21 @@ pub mod token {
         symbol: String,
         uri: String,
     ) -> Result<()> {
-        // Create mint account
+        let nft_metadata = &mut ctx.accounts.nft_metadata;
         let mint = &ctx.accounts.mint;
-        let token_program = &ctx.accounts.token_program;
         let payer = &ctx.accounts.payer;
+
+        // Initialize metadata
+        nft_metadata.name = name;
+        nft_metadata.symbol = symbol;
+        nft_metadata.uri = uri;
+        nft_metadata.mint = mint.key();
+        nft_metadata.authority = payer.key();
         
         // Initialize mint account
         anchor_spl::token::initialize_mint(
             CpiContext::new(
-                token_program.to_account_info(),
+                ctx.accounts.token_program.to_account_info(),
                 anchor_spl::token::InitializeMint {
                     mint: mint.to_account_info(),
                     rent: ctx.accounts.rent.to_account_info(),
@@ -35,17 +40,6 @@ pub mod token {
             payer.key,
             Some(payer.key),
         )?;
-
-        // Create metadata
-        let metadata = DataV2 {
-            name,
-            symbol,
-            uri,
-            seller_fee_basis_points: 0,
-            creators: None,
-            collection: None,
-            uses: None,
-        };
 
         Ok(())
     }
@@ -96,25 +90,25 @@ pub mod token {
         symbol: Option<String>,
         uri: Option<String>,
     ) -> Result<()> {
-        let mint = &ctx.accounts.mint;
+        let metadata = &mut ctx.accounts.nft_metadata;
         let authority = &ctx.accounts.authority;
-        
-        // Get current metadata
-        let current_metadata = DataV2 {
-            name: name.unwrap_or_else(|| "".to_string()),
-            symbol: symbol.unwrap_or_else(|| "".to_string()),
-            uri: uri.unwrap_or_else(|| "".to_string()),
-            seller_fee_basis_points: 0,
-            creators: None,
-            collection: None,
-            uses: None,
-        };
 
-        // Verify authority is the mint authority
         require!(
-            mint.mint_authority.unwrap() == authority.key(),
+            metadata.authority == authority.key(),
             ErrorCode::UnauthorizedAuthority
         );
+
+        if let Some(name) = name {
+            metadata.name = name;
+        }
+
+        if let Some(symbol) = symbol {
+            metadata.symbol = symbol;
+        }
+
+        if let Some(uri) = uri {
+            metadata.uri = uri;
+        }
 
         msg!("NFT metadata updated successfully");
         Ok(())
@@ -132,6 +126,14 @@ pub struct InitializeNft<'info> {
         mint::authority = payer,
     )]
     pub mint: Account<'info, Mint>,
+    #[account(
+        init,
+        payer = payer,
+        space = 8 + NFTMetadata::LEN,
+        seeds = [b"metadata", mint.key().as_ref()],
+        bump
+    )]
+    pub nft_metadata: Account<'info, NFTMetadata>,
     pub token_program: Program<'info, Token>,
     pub associated_token_program: Program<'info, AssociatedToken>,
     pub rent: Sysvar<'info, Rent>,
@@ -164,8 +166,31 @@ pub struct TransferNft<'info> {
 pub struct UpdateNft<'info> {
     #[account(mut)]
     pub mint: Account<'info, Mint>,
+    #[account(
+        mut,
+        seeds = [b"metadata", mint.key().as_ref()],
+        bump
+    )]
+    pub nft_metadata: Account<'info, NFTMetadata>,
     pub authority: Signer<'info>,
     pub token_program: Program<'info, Token>,
+}
+
+#[account]
+pub struct NFTMetadata {
+    pub mint: Pubkey,
+    pub authority: Pubkey,
+    pub name: String,
+    pub symbol: String,
+    pub uri: String,
+}
+
+impl NFTMetadata {
+    pub const LEN: usize = 32 + // mint
+        32 + // authority
+        4 + 32 + // name string
+        4 + 10 + // symbol string
+        4 + 200; // uri string
 }
 
 #[error_code]
