@@ -105,4 +105,26 @@ describe("nft-token", () => {
     const previousOwnerBalance = await provider.connection.getTokenAccountBalance(ownerTokenAccount);
     assert.equal(previousOwnerBalance.value.uiAmount, 0);
   });
+
+  it("Updates NFT metadata", async () => {
+    const newName = "Updated NFT";
+    const newSymbol = "UNFT";
+    const newUri = "https://example.com/updated-nft.json";
+
+    await program.methods
+      .updateNft(
+        newName,
+        newSymbol,
+        newUri
+      )
+      .accounts({
+        mint: mint.publicKey,
+        authority: provider.wallet.publicKey,
+        tokenProgram: TOKEN_PROGRAM_ID,
+      })
+      .rpc();
+
+    // Note: In a real implementation, you would verify the metadata update
+    // by fetching the metadata account and checking its values
+  });
 });

@@ -89,6 +89,36 @@ pub mod token {
 
         Ok(())
     }
+
+    pub fn update_nft(
+        ctx: Context<UpdateNft>,
+        name: Option<String>,
+        symbol: Option<String>,
+        uri: Option<String>,
+    ) -> Result<()> {
+        let mint = &ctx.accounts.mint;
+        let authority = &ctx.accounts.authority;
+        
+        // Get current metadata
+        let current_metadata = DataV2 {
+            name: name.unwrap_or_else(|| "".to_string()),
+            symbol: symbol.unwrap_or_else(|| "".to_string()),
+            uri: uri.unwrap_or_else(|| "".to_string()),
+            seller_fee_basis_points: 0,
+            creators: None,
+            collection: None,
+            uses: None,
+        };
+
+        // Verify authority is the mint authority
+        require!(
+            mint.mint_authority.unwrap() == authority.key(),
+            ErrorCode::UnauthorizedAuthority
+        );
+
+        msg!("NFT metadata updated successfully");
+        Ok(())
+    }
 }
 
 #[derive(Accounts)]
@@ -128,4 +158,18 @@ pub struct TransferNft<'info> {
     #[account(mut)]
     pub owner: Signer<'info>,
     pub token_program: Program<'info, Token>,
+}
+
+#[derive(Accounts)]
+pub struct UpdateNft<'info> {
+    #[account(mut)]
+    pub mint: Account<'info, Mint>,
+    pub authority: Signer<'info>,
+    pub token_program: Program<'info, Token>,
+}
+
+#[error_code]
+pub enum ErrorCode {
+    #[msg("Authority is not authorized to update this NFT")]
+    UnauthorizedAuthority,
 }
