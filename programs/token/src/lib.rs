@@ -21,10 +21,11 @@ pub mod token {
         uri: String,
     ) -> Result<()> {
         // Create metadata account
+        let mint_key = ctx.accounts.mint.key();
         let seeds = &[
             b"metadata",
             mpl_token_metadata::ID.as_ref(),
-            ctx.accounts.mint.key().as_ref(),
+            mint_key.as_ref(),
         ];
         let (metadata_account, _) = Pubkey::find_program_address(seeds, &mpl_token_metadata::ID);
 
