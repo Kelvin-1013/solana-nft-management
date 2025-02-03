@@ -7,7 +7,7 @@ use anchor_spl::{
 declare_id!("42TNfJ8hVwfaL4VrT5mJBRAt1sWhMwmd4HuFuovqdtLk");
 
 #[program]
-pub mod nft_program {
+pub mod token {
     use super::*;
 
     pub fn initialize_nft(
@@ -108,13 +108,13 @@ pub mod nft_program {
 }
 
 #[derive(Accounts)]
+#[instruction(name: String, symbol: String, uri: String)]
 pub struct InitializeNft<'info> {
     #[account(mut)]
     pub payer: Signer<'info>,
     #[account(
         init,
         payer = payer,
-        space = 82,  // Standard size for Mint account
         mint::decimals = 0,
         mint::authority = payer,
     )]
