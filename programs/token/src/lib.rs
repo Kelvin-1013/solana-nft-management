@@ -4,8 +4,8 @@ use anchor_spl::{
     token::{self as spl_token, Token, Mint, TokenAccount},
 };
 use mpl_token_metadata::{
-    instructions as token_instruction,
-    state::metadata::*,
+    instructions::{CreateMetadataAccountV3, CreateMetadataAccountV3InstructionArgs},
+    types::{Creator, DataV2},
 };
 
 declare_id!("42TNfJ8hVwfaL4VrT5mJBRAt1sWhMwmd4HuFuovqdtLk");
@@ -44,7 +44,7 @@ pub mod token {
             uses: None,
         };
 
-        let ix = token_instruction::CreateMetadataAccountsV3 {
+        let ix = CreateMetadataAccountV3 {
             metadata: metadata_account,
             mint: ctx.accounts.mint.key(),
             mint_authority: ctx.accounts.payer.key(),
@@ -53,7 +53,7 @@ pub mod token {
             system_program: ctx.accounts.system_program.key(),
             rent: ctx.accounts.rent.key(),
         }
-        .instruction(CreateMetadataAccountsV3InstructionArgs {
+        .instruction(CreateMetadataAccountV3InstructionArgs {
             data: data_v2,
             is_mutable: true,
             collection_details: None,
