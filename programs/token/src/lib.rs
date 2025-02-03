@@ -49,9 +49,9 @@ pub mod token {
             mint: ctx.accounts.mint.key(),
             mint_authority: ctx.accounts.payer.key(),
             payer: ctx.accounts.payer.key(),
-            update_authority: ctx.accounts.payer.key(),
+            update_authority: (ctx.accounts.payer.key(), true),
             system_program: ctx.accounts.system_program.key(),
-            rent: ctx.accounts.rent.key(),
+            rent: Some(ctx.accounts.rent.key()),
         }
         .instruction(CreateMetadataAccountV3InstructionArgs {
             data: data_v2,
