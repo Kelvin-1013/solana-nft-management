@@ -145,9 +145,9 @@ pub struct MintNft<'info> {
 #[derive(Accounts)]
 pub struct TransferNft<'info> {
     #[account(mut)]
-    pub from: InterfaceAccount<'info, TokenAccount>,
+    pub from: Box<InterfaceAccount<'info, TokenAccount>>, 
     #[account(mut)]
-    pub to: InterfaceAccount<'info, TokenAccount>,
+    pub to: Box<InterfaceAccount<'info, TokenAccount>>,
     #[account(mut)]
     pub owner: Signer<'info>,
     pub token_program: Program<'info, TokenInterface>,
@@ -167,6 +167,7 @@ pub struct UpdateNft<'info> {
 }
 
 #[account]
+#[derive(Default)]
 pub struct NFTMetadata {
     pub mint: Pubkey,
     pub authority: Pubkey,
