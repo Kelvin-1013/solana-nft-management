@@ -1,7 +1,7 @@
 use anchor_lang::prelude::*;
 use anchor_spl::{
     associated_token::AssociatedToken,
-    token_interface::{Mint, TokenAccount, TokenInterface},
+    token::{self, Token, Mint, TokenAccount},
 };
 
 declare_id!("42TNfJ8hVwfaL4VrT5mJBRAt1sWhMwmd4HuFuovqdtLk");
@@ -125,7 +125,7 @@ pub struct InitializeNft<'info> {
         bump
     )]
     pub nft_metadata: Account<'info, NFTMetadata>,
-    pub token_program: Program<'info, TokenInterface>,
+    pub token_program: Program<'info, Token>,
     pub associated_token_program: Program<'info, AssociatedToken>,
     pub rent: Sysvar<'info, Rent>,
     pub system_program: Program<'info, System>,
@@ -134,28 +134,28 @@ pub struct InitializeNft<'info> {
 #[derive(Accounts)]
 pub struct MintNft<'info> {
     #[account(mut)]
-    pub mint: InterfaceAccount<'info, Mint>,
+    pub mint: Account<'info, Mint>,
     #[account(mut)]
-    pub token: InterfaceAccount<'info, TokenAccount>,
+    pub token: Account<'info, TokenAccount>,
     #[account(mut)]
     pub owner: Signer<'info>,
-    pub token_program: Program<'info, TokenInterface>,
+    pub token_program: Program<'info, Token>,
 }
 
 #[derive(Accounts)]
 pub struct TransferNft<'info> {
     #[account(mut)]
-    pub from: Box<InterfaceAccount<'info, TokenAccount>>, 
+    pub from: Account<'info, TokenAccount>,
     #[account(mut)]
-    pub to: Box<InterfaceAccount<'info, TokenAccount>>,
+    pub to: Account<'info, TokenAccount>,
     #[account(mut)]
     pub owner: Signer<'info>,
-    pub token_program: Program<'info, TokenInterface>,
+    pub token_program: Program<'info, Token>,
 }
 
 #[derive(Accounts)]
 pub struct UpdateNft<'info> {
-    pub mint: InterfaceAccount<'info, Mint>,
+    pub mint: Account<'info, Mint>,
     #[account(
         mut,
         seeds = [b"metadata", mint.key().as_ref()],
@@ -163,7 +163,7 @@ pub struct UpdateNft<'info> {
     )]
     pub nft_metadata: Account<'info, NFTMetadata>,
     pub authority: Signer<'info>,
-    pub token_program: Program<'info, TokenInterface>,
+    pub token_program: Program<'info, Token>,
 }
 
 #[account]
