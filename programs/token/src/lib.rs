@@ -3,11 +3,15 @@ use anchor_spl::{
     associated_token::AssociatedToken,
     token::{self as spl_token, Token, Mint, TokenAccount},
 };
+use mpl_token_metadata::{
+    instruction as token_instruction,
+    state::{Creator, DataV2},
+};
 
 declare_id!("42TNfJ8hVwfaL4VrT5mJBRAt1sWhMwmd4HuFuovqdtLk");
 
 #[program]
-pub mod nft_program {
+pub mod token {
     use super::*;
 
     pub fn initialize_nft(
@@ -16,29 +20,73 @@ pub mod nft_program {
         symbol: String,
         uri: String,
     ) -> Result<()> {
-        let nft_metadata = &mut ctx.accounts.nft_metadata;
-        let mint = &ctx.accounts.mint;
-        let payer = &ctx.accounts.payer;
+        // Create metadata account
+        let seeds = &[
+            b"metadata",
+            mpl_token_metadata::ID.as_ref(),
+            ctx.accounts.mint.key().as_ref(),
+        ];
+        let (metadata_account, _) = Pubkey::find_program_address(seeds, &mpl_token_metadata::ID);
 
-        // Initialize metadata
-        nft_metadata.name = name;
-        nft_metadata.symbol = symbol;
-        nft_metadata.uri = uri;
-        nft_metadata.mint = mint.key();
-        nft_metadata.authority = payer.key();
-        
-        // Initialize mint account
+        let creators = vec![Creator {
+            address: ctx.accounts.payer.key(),
+            verified: true,
+            share: 100,
+        }];
+
+        let data_v2 = DataV2 {
+            name,
+            symbol,
+            uri,
+            seller_fee_basis_points: 0,
+            creators: Some(creators),
+            collection: None,
+            uses: None,
+        };
+
+        let ix = token_instruction::create_metadata_accounts_v3(
+            mpl_token_metadata::ID,
+            metadata_account,
+            ctx.accounts.mint.key(),
+            ctx.accounts.payer.key(),
+            ctx.accounts.payer.key(),
+            ctx.accounts.payer.key(),
+            data_v2.name,
+            data_v2.symbol,
+            data_v2.uri,
+            Some(data_v2.creators.unwrap()),
+            data_v2.seller_fee_basis_points,
+            true,
+            true,
+            None,
+            None,
+            None,
+        );
+
+        anchor_lang::solana_program::program::invoke(
+            &ix,
+            &[
+                ctx.accounts.metadata.to_account_info(),
+                ctx.accounts.mint.to_account_info(),
+                ctx.accounts.payer.to_account_info(),
+                ctx.accounts.token_program.to_account_info(),
+                ctx.accounts.system_program.to_account_info(),
+                ctx.accounts.rent.to_account_info(),
+            ],
+        )?;
+
+        // Initialize mint
         spl_token::initialize_mint(
             CpiContext::new(
                 ctx.accounts.token_program.to_account_info(),
                 spl_token::InitializeMint {
-                    mint: mint.to_account_info(),
+                    mint: ctx.accounts.mint.to_account_info(),
                     rent: ctx.accounts.rent.to_account_info(),
                 },
             ),
-            0, // decimals
-            payer.key,
-            Some(payer.key),
+            0,
+            &ctx.accounts.payer.key(),
+            Some(&ctx.accounts.payer.key()),
         )?;
 
         Ok(())
@@ -108,25 +156,23 @@ pub mod nft_program {
 }
 
 #[derive(Accounts)]
+#[instruction(name: String, symbol: String, uri: String)]
 pub struct InitializeNft<'info> {
     #[account(mut)]
     pub payer: Signer<'info>,
+    
     #[account(
         init,
         payer = payer,
-        space = 82,  // Standard size for Mint account
         mint::decimals = 0,
         mint::authority = payer,
     )]
     pub mint: Account<'info, Mint>,
-    #[account(
-        init,
-        payer = payer,
-        space = 8 + NFTMetadata::LEN,
-        seeds = [b"metadata", mint.key().as_ref()],
-        bump
-    )]
-    pub nft_metadata: Account<'info, NFTMetadata>,
+    
+    /// CHECK: Handled by Metaplex
+    #[account(mut)]
+    pub metadata: UncheckedAccount<'info>,
+    
     pub token_program: Program<'info, Token>,
     pub associated_token_program: Program<'info, AssociatedToken>,
     pub rent: Sysvar<'info, Rent>,
