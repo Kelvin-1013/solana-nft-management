@@ -1,11 +1,7 @@
 use anchor_lang::prelude::*;
 use anchor_spl::{
     associated_token::AssociatedToken,
-    token::{self as spl_token, Token},
-    metadata::{
-        Metadata as TokenMetadata,
-        mpl_token_metadata::state::{Mint as TokenMint, TokenAccount as SplTokenAccount}
-    }
+    token::{self as spl_token, Token, Mint, TokenAccount},
 };
 
 declare_id!("42TNfJ8hVwfaL4VrT5mJBRAt1sWhMwmd4HuFuovqdtLk");
@@ -118,9 +114,11 @@ pub struct InitializeNft<'info> {
     #[account(
         init,
         payer = payer,
-        space = TokenMint::LEN,
+        space = 82,  // Standard size for Mint account
+        mint::decimals = 0,
+        mint::authority = payer,
     )]
-    pub mint: Account<'info, TokenMint>,
+    pub mint: Account<'info, Mint>,
     #[account(
         init,
         payer = payer,
@@ -138,9 +136,9 @@ pub struct InitializeNft<'info> {
 #[derive(Accounts)]
 pub struct MintNft<'info> {
     #[account(mut)]
-    pub mint: Account<'info, TokenMint>,
+    pub mint: Account<'info, Mint>,
     #[account(mut)]
-    pub token: Account<'info, SplTokenAccount>,
+    pub token: Account<'info, TokenAccount>,
     #[account(mut)]
     pub owner: Signer<'info>,
     pub token_program: Program<'info, Token>,
@@ -149,9 +147,9 @@ pub struct MintNft<'info> {
 #[derive(Accounts)]
 pub struct TransferNft<'info> {
     #[account(mut)]
-    pub from: Account<'info, SplTokenAccount>,
+    pub from: Account<'info, TokenAccount>,
     #[account(mut)]
-    pub to: Account<'info, SplTokenAccount>,
+    pub to: Account<'info, TokenAccount>,
     #[account(mut)]
     pub owner: Signer<'info>,
     pub token_program: Program<'info, Token>,
@@ -159,7 +157,7 @@ pub struct TransferNft<'info> {
 
 #[derive(Accounts)]
 pub struct UpdateNft<'info> {
-    pub mint: Account<'info, TokenMint>,
+    pub mint: Account<'info, Mint>,
     #[account(
         mut,
         seeds = [b"metadata", mint.key().as_ref()],
