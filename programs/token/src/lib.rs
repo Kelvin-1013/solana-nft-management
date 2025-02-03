@@ -4,8 +4,8 @@ use anchor_spl::{
     token::{self as spl_token, Token, Mint, TokenAccount},
 };
 use mpl_token_metadata::{
-    instruction as token_instruction,
-    state::{Creator, DataV2},
+    instructions as token_instruction,
+    state::metadata::*,
 };
 
 declare_id!("42TNfJ8hVwfaL4VrT5mJBRAt1sWhMwmd4HuFuovqdtLk");
@@ -44,24 +44,20 @@ pub mod token {
             uses: None,
         };
 
-        let ix = token_instruction::create_metadata_accounts_v3(
-            mpl_token_metadata::ID,
-            metadata_account,
-            ctx.accounts.mint.key(),
-            ctx.accounts.payer.key(),
-            ctx.accounts.payer.key(),
-            ctx.accounts.payer.key(),
-            data_v2.name,
-            data_v2.symbol,
-            data_v2.uri,
-            Some(data_v2.creators.unwrap()),
-            data_v2.seller_fee_basis_points,
-            true,
-            true,
-            None,
-            None,
-            None,
-        );
+        let ix = token_instruction::CreateMetadataAccountsV3 {
+            metadata: metadata_account,
+            mint: ctx.accounts.mint.key(),
+            mint_authority: ctx.accounts.payer.key(),
+            payer: ctx.accounts.payer.key(),
+            update_authority: ctx.accounts.payer.key(),
+            system_program: ctx.accounts.system_program.key(),
+            rent: ctx.accounts.rent.key(),
+        }
+        .instruction(CreateMetadataAccountsV3InstructionArgs {
+            data: data_v2,
+            is_mutable: true,
+            collection_details: None,
+        });
 
         anchor_lang::solana_program::program::invoke(
             &ix,
