@@ -1,13 +1,13 @@
 use anchor_lang::prelude::*;
 use anchor_spl::{
     associated_token::AssociatedToken,
-    token::{self, Token, Mint, TokenAccount},
+    token::{self as spl_token, Token, Mint, TokenAccount},
 };
 
 declare_id!("42TNfJ8hVwfaL4VrT5mJBRAt1sWhMwmd4HuFuovqdtLk");
 
 #[program]
-pub mod token {
+pub mod nft_program {
     use super::*;
 
     pub fn initialize_nft(
@@ -28,10 +28,10 @@ pub mod token {
         nft_metadata.authority = payer.key();
         
         // Initialize mint account
-        anchor_spl::token::initialize_mint(
+        spl_token::initialize_mint(
             CpiContext::new(
                 ctx.accounts.token_program.to_account_info(),
-                anchor_spl::token::InitializeMint {
+                spl_token::InitializeMint {
                     mint: mint.to_account_info(),
                     rent: ctx.accounts.rent.to_account_info(),
                 },
@@ -45,10 +45,10 @@ pub mod token {
     }
 
     pub fn mint_nft(ctx: Context<MintNft>) -> Result<()> {
-        anchor_spl::token::mint_to(
+        spl_token::mint_to(
             CpiContext::new(
                 ctx.accounts.token_program.to_account_info(),
-                anchor_spl::token::MintTo {
+                spl_token::MintTo {
                     mint: ctx.accounts.mint.to_account_info(),
                     to: ctx.accounts.token.to_account_info(),
                     authority: ctx.accounts.owner.to_account_info(),
@@ -61,10 +61,10 @@ pub mod token {
     }
 
     pub fn transfer_nft(ctx: Context<TransferNft>) -> Result<()> {
-        anchor_spl::token::transfer(
+        spl_token::transfer(
             CpiContext::new(
                 ctx.accounts.token_program.to_account_info(),
-                anchor_spl::token::Transfer {
+                spl_token::Transfer {
                     from: ctx.accounts.from.to_account_info(),
                     to: ctx.accounts.to.to_account_info(),
                     authority: ctx.accounts.owner.to_account_info(),
