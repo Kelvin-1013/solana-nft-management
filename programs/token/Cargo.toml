@@ -18,4 +18,3 @@ no-log-ix-name = []
 [dependencies]
 anchor-lang = "=0.30.1"
 anchor-spl = { version = "=0.30.1", features = ["metadata"] }
-mpl-token-metadata = "5.1.0"
