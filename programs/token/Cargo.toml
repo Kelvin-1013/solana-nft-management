@@ -19,4 +19,4 @@ no-log-ix-name = []
 anchor-lang = "=0.28.0"
 anchor-spl = { version = "=0.28.0", features = ["metadata"] }
 mpl-token-metadata = "=1.12.0"
-solana-program = "=1.18.0"
+solana-program = "=1.16.0"
